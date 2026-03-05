@@ -1,47 +1,72 @@
-# Introduction to GitHub
+# Ethical Fact Checker Engine
 
-_Get started using GitHub in less than an hour._
+A lightweight Python engine that fact-checks natural-language claims by
+matching them against a structured, attributed facts database.
 
-## Welcome
+## Design principle – facts over semantics
 
-People use GitHub to build some of the most advanced technologies in the world. Whether you’re visualizing data or building a new game, there’s a whole community and set of tools on GitHub that can help you do it even better. GitHub Skills’ “Introduction to GitHub” exercise guides you through everything you need to start contributing in less than an hour.
+The engine anchors every verdict to an explicit **Fact** record
+(`subject / predicate / object / source / confidence`) rather than
+relying on language-model inference or fuzzy semantic similarity.
+This keeps results auditable and independently verifiable.
 
-- **Who is this for**: New developers, new GitHub users, and students.
-- **What you'll learn**: We'll introduce repositories, branches, commits, and pull requests.
-- **What you'll build**: We'll make a short Markdown file you can use as your [profile README](https://docs.github.com/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme).
-- **Prerequisites**: None. This exercise is a great introduction for your first day on GitHub.
-- **How long**: This exercise takes less than one hour to complete.
+## Verdict taxonomy
 
-In this exercise, you will:
+| Verdict     | Meaning |
+|-------------|---------|
+| `TRUE`      | Claim matches a known fact (confidence ≥ 70 %). |
+| `LIKELY`    | Moderate confidence match (50 – 70 %). |
+| `FALSE`     | Claim directly contradicts a known fact. |
+| `UNCERTAIN` | No matching fact found or confidence too low. |
+| `REFUSED`   | Claim failed ethical pre-screening. |
 
-1. Create a branch
-2. Commit a file
-3. Open a pull request
-4. Merge your pull request
+## Ethical safeguards
 
-### How to start this exercise
+* **Pre-check** – rejects empty, overly long, or otherwise problematic claims.
+* **Post-check** – every positive verdict must cite its source; low-confidence
+  verdicts are blocked or flagged with a warning.
+* **PII redaction** – e-mail addresses and phone numbers are stripped before
+  any claim is logged.
 
-Simply copy the exercise to your account, then give your favorite Octocat (Mona) **about 20 seconds** to prepare the first lesson, then **refresh the page**.
+## Quick start
 
-[![](https://img.shields.io/badge/Copy%20Exercise-%E2%86%92-1f883d?style=for-the-badge&logo=github&labelColor=197935)](https://github.com/new?template_owner=skills&template_name=introduction-to-github&owner=%40me&name=skills-introduction-to-github&description=Exercise:+Introduction+to+GitHub&visibility=public)
+```bash
+# Install
+pip install -e .
 
-<details>
-<summary>Having trouble? 🤷</summary><br/>
+# CLI – plain text output
+fact-checker "Water boils at 100 degrees Celsius." "The sun is not a star."
 
-When copying the exercise, we recommend the following settings:
+# CLI – JSON output
+fact-checker --json "DNA stands for deoxyribonucleic acid."
+```
 
-- For owner, choose your personal account or an organization to host the repository.
+## Extending the fact database
 
-- We recommend creating a public repository, since private repositories will use Actions minutes.
+```python
+from fact_checker import FactCheckerEngine
+from fact_checker.facts_db import Fact
 
-If the exercise isn't ready in 20 seconds, please check the [Actions](../../actions) tab.
+engine = FactCheckerEngine()
+engine.add_fact(Fact(
+    subject="mount fuji",
+    predicate="height is",
+    obj="3776 metres",
+    source="Geospatial Information Authority of Japan",
+    confidence=1.0,
+    domain="geography",
+))
+result = engine.check("Mount Fuji height is 3776 metres.")
+print(result.verdict)   # TRUE
+```
 
-- Check to see if a job is running. Sometimes it simply takes a bit longer.
+## Running tests
 
-- If the page shows a failed job, please submit an issue. Nice, you found a bug! 🐛
-
-</details>
+```bash
+pip install pytest
+pytest
+```
 
 ---
 
-&copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+&copy; 2025 GitHub &bull; [MIT License](https://gh.io/mit)
